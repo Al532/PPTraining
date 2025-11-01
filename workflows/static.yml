@@ -6,6 +6,7 @@ on:
     branches: ["main", "test"]
   delete:                     # ✅ nouvelle ligne : déclenché si branche supprimée
     branches: ["test"]
+  merge:
   workflow_dispatch:
 
 permissions:
