@@ -1,0 +1,60 @@
+# .github/workflows/pages.yml
+name: Deploy GitHub Pages (prefer test)
+
+on:
+  push:
+    branches: ["main", "test"]
+  delete:                     # ✅ nouvelle ligne : déclenché si branche supprimée
+    branches: ["test"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      # 1) Checkout (pour avoir 'origin' configuré)
+      - name: Initial checkout
+        uses: actions/checkout@v4
+
+      # 2) Choisir la branche à déployer
+      #    Si test existe → deploy test
+      #    Si test supprimée → fallback sur main
+      - name: Pick branch to deploy
+        id: pick
+        run: |
+          if git ls-remote --heads origin test | grep -q "refs/heads/test"; then
+            echo "ref=test" >> $GITHUB_OUTPUT
+          else
+            echo "ref=main" >> $GITHUB_OUTPUT
+          fi
+          echo "Will deploy: $(cat $GITHUB_OUTPUT)"
+
+      # 3) Checkout de la branche à déployer
+      - name: Checkout target branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.pick.outputs.ref }}
+
+      # 4) Site statique sans build
+      - name: Upload artifact (static site)
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .   # ⇦ ton dossier public
+
+      # 5) Déploiement sur GitHub Pages
+      - name: Deploy to Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
