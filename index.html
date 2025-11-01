@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Perfect Pitch Training</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#111" />
+  <style>
+    :root { font-family: system-ui, sans-serif; color-scheme: light dark; }
+    body { margin: 0; padding: 16px; display: grid; gap: 12px; }
+    header { display: flex; align-items: center; gap: 8px; }
+    button { padding: 12px 14px; border-radius: 12px; border: 1px solid #7775; background: #fff1; }
+    #grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+    .bar { display:flex; gap:8px; align-items:center; }
+    .pill { padding: 6px 10px; border-radius: 999px; background: #0003; }
+    #toast { min-height: 1.5em; opacity:.9 }
+  </style>
+</head>
+<body>
+  <header>
+    <h1 style="margin:0;font-size:1.2rem;">Perfect Pitch Training</h1>
+    <span class="pill" id="timbreLabel">Piano</span>
+    <span class="pill" id="status">Prêt</span>
+  </header>
+
+  <div class="bar">
+    <button id="startStop">Start level</button>
+    <button id="toggleTimbre">Timbre : Piano</button>
+    <button id="test">▶️ Tester le son (C)</button>
+  </div>
+
+  <div id="grid"></div>
+  <div id="toast"></div>
+
+  <script type="module" src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').catch(()=>{});
+    }
+  </script>
+</body>
+</html>
