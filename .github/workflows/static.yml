@@ -4,8 +4,11 @@ name: Deploy GitHub Pages (prefer test)
 on:
   push:
     branches: ["main", "test"]
-  delete:                     # ✅ nouvelle ligne : déclenché si branche supprimée
-    branches: ["test"]
+  delete:
+    branches: ["test"]          # quand la branche 'test' est supprimée sur le remote
+  pull_request:
+    types: [closed]             # quand une PR vers main est fermée/mergée (souvent suivi d'une suppression)
+    branches: ["main", "test"]
   workflow_dispatch:
 
 permissions:
@@ -25,13 +28,16 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
-      # 1) Checkout (pour avoir 'origin' configuré)
       - name: Initial checkout
         uses: actions/checkout@v4
 
-      # 2) Choisir la branche à déployer
-      #    Si test existe → deploy test
-      #    Si test supprimée → fallback sur main
+      - name: Debug event
+        run: |
+          echo "event_name=${{ github.event_name }}"
+          echo "ref=${{ github.ref }}"
+          echo "deleted_ref=${{ github.event.ref || '' }}"
+
+      # Choisir la branche à déployer : 'test' si elle existe sur le remote, sinon 'main'
       - name: Pick branch to deploy
         id: pick
         run: |
@@ -40,21 +46,19 @@ jobs:
           else
             echo "ref=main" >> $GITHUB_OUTPUT
           fi
-          echo "Will deploy: $(cat $GITHUB_OUTPUT)"
+          echo "Will deploy ${{ steps.pick.outputs.ref }}"
 
-      # 3) Checkout de la branche à déployer
       - name: Checkout target branch
         uses: actions/checkout@v4
         with:
           ref: ${{ steps.pick.outputs.ref }}
 
-      # 4) Site statique sans build
+      # Site statique sans build (sinon remplace par ta phase build + path: ./dist)
       - name: Upload artifact (static site)
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .   # ⇦ ton dossier public
+          path: .   # dossier contenant index.html
 
-      # 5) Déploiement sur GitHub Pages
       - name: Deploy to Pages
         id: deployment
         uses: actions/deploy-pages@v4
