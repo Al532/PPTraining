@@ -26,7 +26,7 @@ function toFlat(name){
 }
 
 const CHROMAS_APPEAR_ORDER = ["F","E","F#","Eb","G","D","Ab","C#","A","C","Bb","B"];
-const MAX_LEVEL = 12;
+const MAX_LEVEL = 11;
 const ISI_AFTER_RESPONSE_MS = 500;
 
 const TOTAL_SAMPLES = 36;      // 3 octaves * 12 (C4..B6)
@@ -121,7 +121,10 @@ function nameToIdx(name) {
   return (flat in NOTE_INDEX) ? NOTE_INDEX[flat] : -1;
 }
 function getLevelNames(L) {
-  return CHROMAS_APPEAR_ORDER.slice(0, Math.min(L, MAX_LEVEL));
+  if (L >= MAX_LEVEL) {
+    return [...NOTE_NAMES_DISPLAY];
+  }
+  return CHROMAS_APPEAR_ORDER.slice(0, Math.min(L, CHROMAS_APPEAR_ORDER.length));
 }
 function getLevelSet(L) {
   return getLevelNames(L).map(nameToIdx);
@@ -129,6 +132,9 @@ function getLevelSet(L) {
 function updateLevelUI() {
   levelLabel.textContent = `Niveau ${level}`;
   setStatus(`Niveau ${level}`);
+  if (btnOUT) {
+    btnOUT.style.display = (level >= MAX_LEVEL) ? "none" : "";
+  }
 }
 function stopRunForLevelChange() {
   const message = autoMode ? `Niveau ${level}` : undefined;
@@ -349,8 +355,22 @@ function buildGrid() {
 // --- Tirage cible (0..35) ---
 function wrapPitch(p){ let x = p % TOTAL_SAMPLES; if (x < 0) x += TOTAL_SAMPLES; return x; }
 function pickTargetPitch() {
-  const baseSet = getLevelSet(level);        // chromas autorisées
-  const baseChroma = baseSet[Math.floor(Math.random() * baseSet.length)];
+  const levelSet = getLevelSet(level);        // chromas autorisées
+
+  if (level <= 3) {
+    const chromasOut = [];
+    for (let i = 0; i < 12; i += 1) {
+      if (!levelSet.includes(i)) chromasOut.push(i);
+    }
+
+    const forceOut = chromasOut.length > 0 && Math.random() < 0.5;
+    const chromaPool = forceOut ? chromasOut : levelSet;
+    const chosenChroma = chromaPool[Math.floor(Math.random() * chromaPool.length)];
+    const octave = Math.floor(Math.random() * OCTAVE_COUNT); // 0,1,2
+    return octave * 12 + chosenChroma;       // 0..35
+  }
+
+  const baseChroma = levelSet[Math.floor(Math.random() * levelSet.length)];
   const octave = Math.floor(Math.random() * OCTAVE_COUNT); // 0,1,2
   const basePitch = octave * 12 + baseChroma;
   const shift = [-2,-1,0,1,2][Math.floor(Math.random() * 5)];
